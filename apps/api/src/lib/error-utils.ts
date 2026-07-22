@@ -1,0 +1,3 @@
+export function errMsg(error: unknown): string {
+  return error instanceof Error ? error.message : "An unexpected error occurred.";
+}
