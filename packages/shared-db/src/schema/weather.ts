@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { pgTable, text, varchar, integer } from "drizzle-orm/pg-core";
+import { index, integer, json, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { sql } from "drizzle-orm";
 
@@ -8,6 +8,16 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
 });
+
+export const sessions = pgTable(
+  "session",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire", { precision: 6 }).notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
 
 export const savedArticles = pgTable("saved_articles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

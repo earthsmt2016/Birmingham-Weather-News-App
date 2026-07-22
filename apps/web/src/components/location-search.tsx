@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Search, MapPin, X } from "lucide-react";
+import { apiUrl } from "@/lib/api-url";
 import { reportClientError } from "@/lib/report-error";
 
 interface LocationSearchProps {
@@ -57,7 +58,7 @@ export function LocationSearch({ currentLocation, onLocationSelect, onReset }: L
     }
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(searchQuery.trim())}`);
+      const res = await fetch(apiUrl(`/api/geocode?q=${encodeURIComponent(searchQuery.trim())}`));
       if (res.ok) {
         const data = await res.json();
         setResults(data.results || []);

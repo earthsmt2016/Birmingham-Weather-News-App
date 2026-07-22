@@ -11,6 +11,7 @@ import { useDashboardData, type LocationState } from "@/hooks/use-dashboard-data
 import { useSavedArticles } from "@/hooks/use-saved-articles";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
+import { apiUrl } from "@/lib/api-url";
 import {
   FALLBACK_COUNTRY,
   FALLBACK_LAT,
@@ -102,7 +103,7 @@ export default function Dashboard() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const response = await fetch(`/api/reverse-geocode?lat=${latitude}&lon=${longitude}`);
+          const response = await fetch(apiUrl(`/api/reverse-geocode?lat=${latitude}&lon=${longitude}`));
           if (response.ok) {
             const data = await response.json();
             const detected = {

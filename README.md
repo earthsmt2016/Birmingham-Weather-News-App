@@ -52,13 +52,17 @@ Frontend:
 
 - `PORT` - optional Vite port, defaults to `5173`.
 - `API_PROXY_TARGET` - optional backend URL, defaults to `http://127.0.0.1:5001`.
+- `VITE_API_BASE_URL` - optional deployed backend origin, for example `https://api.example.com`. Leave blank locally so Vite can proxy `/api/*`.
 
 Backend:
 
-- `PORT` - optional API port, defaults to `5001`.
+- `PORT` - optional API port, defaults to `5001` locally and `3000` in production.
+- `HOST` - optional bind address. Defaults to `127.0.0.1` locally and `0.0.0.0` in production.
+- `STATIC_ASSETS_DIR` - optional path to built frontend assets when the API serves the React app in Amplify Hosting compute.
+- `ENABLE_NOTIFICATION_SCHEDULER` - optional. Defaults to `false` in production because Amplify Hosting compute is request-driven, not a reliable background worker.
 - `DATABASE_URL` - Postgres connection string for persistent storage.
 - `SESSION_SECRET` - session cookie secret.
-- `CORS_ORIGIN` - required in production when the frontend is served from another origin.
+- `CORS_ORIGIN` - required in production. Set it to the Amplify app URL.
 
 ## Quality Checks
 
@@ -67,4 +71,73 @@ corepack pnpm run test
 corepack pnpm run typecheck
 corepack pnpm run build
 corepack pnpm run lint
+```
+
+## AWS Amplify Hosting
+
+This repo includes `amplify.yml` for a single Amplify Hosting deployment:
+
+- the Vite frontend is copied into `.amplify-hosting/static`
+- the Express API is copied into `.amplify-hosting/compute/default`
+- `/api/*` is routed to the Express API
+- normal page routes are served by the same Express app as the React SPA
+
+In the Amplify console, set the monorepo app root to:
+
+```text
+apps/web
+```
+
+For an existing Amplify app, also set this environment variable:
+
+```text
+AMPLIFY_MONOREPO_APP_ROOT=apps/web
+```
+
+The log line `No backend environment association found` is still normal. It only means there is no separate Amplify Gen 1/Gen 2 backend environment. The Express API is deployed through Amplify Hosting compute as part of `.amplify-hosting`.
+
+Amplify runs this build:
+
+```bash
+npm install -g pnpm@11.8.0
+pnpm install --frozen-lockfile
+pnpm run amplify:build
+```
+
+Before deploying the API for the first time, provision Postgres and push the database schema:
+
+```bash
+DATABASE_URL=postgres://... pnpm --filter @workspace/shared-db run push
+```
+
+Set these backend production environment variables:
+
+```text
+NODE_ENV=production
+DATABASE_URL=postgres://...
+SESSION_SECRET=<strong random value>
+CORS_ORIGIN=https://<your-amplify-domain>
+ADMIN_USERNAME=<admin username>
+ADMIN_PASSWORD=<strong password>
+```
+
+Leave `ENABLE_NOTIFICATION_SCHEDULER` unset or `false` on Amplify Hosting. Move scheduled notifications to EventBridge/Lambda before treating them as production-reliable.
+
+Leave `VITE_API_BASE_URL` blank in Amplify so browser requests stay same-origin at `/api/*`.
+
+### Amplify 500 checklist
+
+After deployment, first check:
+
+```text
+https://<your-amplify-domain>/api/healthz
+```
+
+If the home page returns 500, confirm Amplify is using the committed `amplify.yml` and that the artifact base directory is `.amplify-hosting`. If login, saved articles, or push preferences return 500, set the Postgres/session environment variables:
+
+```text
+DATABASE_URL=postgres://...
+SESSION_SECRET=<strong random value>
+ADMIN_USERNAME=<admin username>
+ADMIN_PASSWORD=<strong password>
 ```

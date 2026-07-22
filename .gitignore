@@ -19,6 +19,7 @@ node_modules
 
 # generated platform metadata
 .replit-artifact/
+.amplify-hosting/
 
 # IDEs and editors
 /.idea

@@ -11,6 +11,7 @@
     "typecheck:packages": "tsc --build",
     "typecheck": "corepack pnpm run typecheck:packages && corepack pnpm -r --filter \"./apps/**\" --if-present run typecheck",
     "build": "corepack pnpm run typecheck && corepack pnpm -r --filter \"./apps/**\" --if-present run build",
+    "amplify:build": "corepack pnpm run build && node ./scripts/build-amplify-hosting.mjs",
     "frontend:dev": "corepack pnpm --filter @workspace/frontend run dev",
     "frontend:build": "corepack pnpm --filter @workspace/frontend run build",
     "backend:dev": "corepack pnpm --filter @workspace/backend run dev",
