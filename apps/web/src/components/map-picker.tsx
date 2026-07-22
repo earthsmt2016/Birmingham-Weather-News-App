@@ -4,6 +4,7 @@ import L from "leaflet";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Loader2, X } from "lucide-react";
+import { apiUrl } from "@/lib/api-url";
 import { reportClientError } from "@/lib/report-error";
 import "leaflet/dist/leaflet.css";
 
@@ -80,7 +81,7 @@ export function MapPicker({ currentLat, currentLon, onLocationSelect, isOpen, on
     setPreviewData(null);
 
     try {
-      const res = await fetch(`/api/reverse-geocode?lat=${roundedLat}&lon=${roundedLon}`);
+      const res = await fetch(apiUrl(`/api/reverse-geocode?lat=${roundedLat}&lon=${roundedLon}`));
       if (res.ok) {
         const data = await res.json();
         setPreviewName(data.name);

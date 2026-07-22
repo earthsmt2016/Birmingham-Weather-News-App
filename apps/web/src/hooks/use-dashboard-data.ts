@@ -11,6 +11,7 @@ import {
   type DeathResponse,
 } from "@workspace/shared-api-zod";
 import { queryClient } from "@/lib/queryClient";
+import { apiUrl } from "@/lib/api-url";
 import { reportClientError } from "@/lib/report-error";
 
 export interface LocationState {
@@ -35,7 +36,7 @@ export function useDashboardData(location: LocationState, enabled: boolean) {
   } = useQuery<WeatherForecast, Error>({
     queryKey: ["weather", location.lat, location.lon, location.name],
     queryFn: async () => {
-      const res = await fetch(`/api/weather?${weatherParams}`);
+      const res = await fetch(apiUrl(`/api/weather?${weatherParams}`));
       if (!res.ok) throw new Error("Failed to fetch weather");
       return weatherForecastSchema.parse(await res.json());
     },
@@ -50,7 +51,7 @@ export function useDashboardData(location: LocationState, enabled: boolean) {
   } = useQuery<NewsResponse>({
     queryKey: ["news", location.name, location.region, location.country],
     queryFn: async () => {
-      const res = await fetch(`/api/news?${newsParams}`);
+      const res = await fetch(apiUrl(`/api/news?${newsParams}`));
       if (!res.ok) throw new Error("Failed to fetch news");
       return newsResponseSchema.parse(await res.json());
     },
@@ -61,7 +62,7 @@ export function useDashboardData(location: LocationState, enabled: boolean) {
   const { data: airQuality } = useQuery<AirQuality>({
     queryKey: ["air-quality", location.lat, location.lon],
     queryFn: async () => {
-      const res = await fetch(`/api/air-quality?lat=${location.lat}&lon=${location.lon}`);
+      const res = await fetch(apiUrl(`/api/air-quality?lat=${location.lat}&lon=${location.lon}`));
       if (!res.ok) throw new Error("Failed to fetch air quality");
       return airQualitySchema.parse(await res.json());
     },
@@ -76,7 +77,7 @@ export function useDashboardData(location: LocationState, enabled: boolean) {
   } = useQuery<DeathResponse>({
     queryKey: ["celebrity-deaths"],
     queryFn: async () => {
-      const res = await fetch("/api/celebrity-deaths");
+      const res = await fetch(apiUrl("/api/celebrity-deaths"));
       if (!res.ok) throw new Error("Failed to fetch celebrity deaths");
       return deathResponseSchema.parse(await res.json());
     },
@@ -87,9 +88,9 @@ export function useDashboardData(location: LocationState, enabled: boolean) {
     setIsRefreshing(true);
     try {
       const [weatherRes, newsRes, aqRes] = await Promise.all([
-        fetch(`/api/weather?${weatherParams}&refresh=true`),
-        fetch(`/api/news?${newsParams}&refresh=true`),
-        fetch(`/api/air-quality?lat=${location.lat}&lon=${location.lon}`),
+        fetch(apiUrl(`/api/weather?${weatherParams}&refresh=true`)),
+        fetch(apiUrl(`/api/news?${newsParams}&refresh=true`)),
+        fetch(apiUrl(`/api/air-quality?lat=${location.lat}&lon=${location.lon}`)),
       ]);
       if (weatherRes.ok) queryClient.setQueryData(["weather", location.lat, location.lon, location.name], weatherForecastSchema.parse(await weatherRes.json()));
       if (newsRes.ok)    queryClient.setQueryData(["news", location.name, location.region, location.country], newsResponseSchema.parse(await newsRes.json()));

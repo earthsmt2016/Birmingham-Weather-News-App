@@ -4,17 +4,18 @@ import { startScheduler } from "./notifications";
 
 const rawPort = process.env["PORT"] ?? "5001";
 const port = Number(rawPort);
+const host = process.env["HOST"] ?? (process.env["NODE_ENV"] === "production" ? "0.0.0.0" : "127.0.0.1");
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, "127.0.0.1", (err) => {
+app.listen(port, host, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
   }
 
   startScheduler();
-  logger.info({ port }, "Server listening on http://127.0.0.1:%d", port);
+  logger.info({ host, port }, "Server listening on http://%s:%d", host, port);
 });

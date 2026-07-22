@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, BellOff, BellRing, Send, Settings, ChevronDown, ChevronUp, Clock, Zap } from "lucide-react";
+import { apiUrl } from "@/lib/api-url";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { NotificationPrefsPanel } from "./notification-prefs-panel";
@@ -94,7 +95,7 @@ export function NotificationSettings() {
     const endpoint = await getEndpoint();
     if (!endpoint) return;
     try {
-      const res = await fetch(`/api/push/preferences?endpoint=${encodeURIComponent(endpoint)}`);
+      const res = await fetch(apiUrl(`/api/push/preferences?endpoint=${encodeURIComponent(endpoint)}`));
       if (res.ok) {
         const data = await res.json();
         setPrefs({
@@ -149,7 +150,7 @@ export function NotificationSettings() {
       }
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
-      const res = await fetch("/api/vapid-public-key");
+      const res = await fetch(apiUrl("/api/vapid-public-key"));
       const { publicKey } = await res.json();
       if (!publicKey) {
         toast({ title: "Configuration error", description: "VAPID keys are not configured on the server.", variant: "destructive" });
