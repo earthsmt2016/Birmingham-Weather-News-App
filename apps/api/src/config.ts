@@ -20,14 +20,15 @@ function parseCsv(value: string | undefined): string[] {
 const sessionSecret = getRequiredProductionEnv("SESSION_SECRET") || "dev-fallback-secret-change-me";
 const allowedOrigins = parseCsv(process.env.CORS_ORIGIN);
 
-if (isProduction && allowedOrigins.length === 0) {
-  throw new Error("CORS_ORIGIN must be set in production.");
-}
-
 const corsOptions: CorsOptions = {
-  credentials: true,
+  credentials: !isProduction || allowedOrigins.length > 0,
   origin: isProduction
     ? (origin, callback) => {
+        if (allowedOrigins.length === 0) {
+          callback(null, false);
+          return;
+        }
+
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
           return;

@@ -121,3 +121,20 @@ ADMIN_PASSWORD=<strong password>
 ```
 
 Leave `VITE_API_BASE_URL` blank in Amplify so browser requests stay same-origin at `/api/*`.
+
+### Amplify 500 checklist
+
+After deployment, first check:
+
+```text
+https://<your-amplify-domain>/api/healthz
+```
+
+If the home page returns 500, confirm Amplify is using the committed `amplify.yml` and that the artifact base directory is `.amplify-hosting`. If login, saved articles, or push preferences return 500, set the Postgres/session environment variables:
+
+```text
+DATABASE_URL=postgres://...
+SESSION_SECRET=<strong random value>
+ADMIN_USERNAME=<admin username>
+ADMIN_PASSWORD=<strong password>
+```

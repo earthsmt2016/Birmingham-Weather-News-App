@@ -1,13 +1,11 @@
 import path from "node:path";
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
-import cors from "cors";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
 import pinoHttp from "pino-http";
-import router from "./routes";
-import { config } from "./config";
+import forecastRouter from "./routes/forecast";
+import healthRouter from "./routes/health";
+import locationRouter from "./routes/location";
+import newsRouter from "./routes/news";
 import { logger } from "./lib/logger";
-import { pool } from "@workspace/shared-db";
 
 declare module "express-session" {
   interface SessionData {
@@ -32,27 +30,100 @@ app.use(
   }),
 );
 
-app.use(cors(config.corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const PgStore = connectPg(session);
-app.use(
-  session({
-    store: new PgStore({ pool, createTableIfMissing: !config.isProduction }),
-    secret: config.sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: config.isProduction,
-      httpOnly: true,
-      sameSite: config.isProduction ? "none" : "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    },
-  })
-);
+const publicApiRouter = express.Router();
+publicApiRouter.use(healthRouter);
+publicApiRouter.use(locationRouter);
+publicApiRouter.use(forecastRouter);
+publicApiRouter.use(newsRouter);
+publicApiRouter.get("/auth/me", (_req, res, next) => {
+  if (process.env["SESSION_SECRET"] && process.env["DATABASE_URL"]) {
+    next();
+    return;
+  }
 
-app.use("/api", router);
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.json({ userId: null, username: null });
+});
+publicApiRouter.get("/vapid-public-key", (_req, res) => {
+  res.json({ publicKey: process.env["VAPID_PUBLIC_KEY"] || "" });
+});
+
+app.use("/api", publicApiRouter);
+
+const databaseRoutePrefixes = ["/auth", "/saved-articles", "/push"];
+let databaseApiRouterPromise: Promise<express.Router> | undefined;
+
+function matchesDatabaseRoute(pathname: string): boolean {
+  return databaseRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+async function getDatabaseApiRouter(): Promise<express.Router> {
+  databaseApiRouterPromise ??= buildDatabaseApiRouter();
+  return databaseApiRouterPromise;
+}
+
+async function buildDatabaseApiRouter(): Promise<express.Router> {
+  const [
+    { default: cors },
+    { default: session },
+    { default: connectPg },
+    { config },
+    { pool },
+    { default: authRouter },
+    { default: pushRouter },
+    { default: savedArticlesRouter },
+  ] = await Promise.all([
+    import("cors"),
+    import("express-session"),
+    import("connect-pg-simple"),
+    import("./config"),
+    import("@workspace/shared-db"),
+    import("./routes/auth"),
+    import("./routes/push"),
+    import("./routes/saved-articles"),
+  ]);
+
+  const router = express.Router();
+  const PgStore = connectPg(session);
+
+  router.use(cors(config.corsOptions));
+  router.use(
+    session({
+      store: new PgStore({ pool, createTableIfMissing: !config.isProduction }),
+      secret: config.sessionSecret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: config.isProduction,
+        httpOnly: true,
+        sameSite: config.isProduction ? "none" : "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      },
+    }),
+  );
+  router.use(authRouter);
+  router.use(pushRouter);
+  router.use(savedArticlesRouter);
+
+  return router;
+}
+
+app.use("/api", async (req, res, next) => {
+  if (!matchesDatabaseRoute(req.path)) {
+    next();
+    return;
+  }
+
+  try {
+    const databaseApiRouter = await getDatabaseApiRouter();
+    databaseApiRouter(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+});
 
 const staticAssetsDir = process.env["STATIC_ASSETS_DIR"];
 
@@ -76,7 +147,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const status = typeof asRecord.status === "number" ? asRecord.status
     : typeof asRecord.statusCode === "number" ? asRecord.statusCode
     : 500;
-  const message = status >= 500 && config.isProduction
+  const message = status >= 500 && process.env["NODE_ENV"] === "production"
     ? "Internal Server Error"
     : err instanceof Error ? err.message : "Internal Server Error";
   logger.error({ err }, "Unhandled error");
