@@ -59,6 +59,7 @@ Backend:
 - `PORT` - optional API port, defaults to `5001` locally and `3000` in production.
 - `HOST` - optional bind address. Defaults to `127.0.0.1` locally and `0.0.0.0` in production.
 - `STATIC_ASSETS_DIR` - optional path to built frontend assets when the API serves the React app in Amplify Hosting compute.
+- `ENABLE_NOTIFICATION_SCHEDULER` - optional. Defaults to `false` in production because Amplify Hosting compute is request-driven, not a reliable background worker.
 - `DATABASE_URL` - Postgres connection string for persistent storage.
 - `SESSION_SECRET` - session cookie secret.
 - `CORS_ORIGIN` - required in production. Set it to the Amplify app URL.
@@ -119,6 +120,8 @@ CORS_ORIGIN=https://<your-amplify-domain>
 ADMIN_USERNAME=<admin username>
 ADMIN_PASSWORD=<strong password>
 ```
+
+Leave `ENABLE_NOTIFICATION_SCHEDULER` unset or `false` on Amplify Hosting. Move scheduled notifications to EventBridge/Lambda before treating them as production-reliable.
 
 Leave `VITE_API_BASE_URL` blank in Amplify so browser requests stay same-origin at `/api/*`.
 

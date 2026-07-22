@@ -1,4 +1,3 @@
-import path from "node:path";
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import pinoHttp from "pino-http";
 import forecastRouter from "./routes/forecast";
@@ -131,12 +130,12 @@ if (staticAssetsDir) {
   app.use(express.static(staticAssetsDir, { index: false }));
 
   app.use((req, res, next) => {
-    if (req.method !== "GET" || req.path.startsWith("/api") || path.extname(req.path)) {
+    if (req.method !== "GET" || req.path.startsWith("/api") || req.path.includes(".")) {
       next();
       return;
     }
 
-    res.sendFile(path.join(staticAssetsDir, "index.html"), (err) => {
+    res.sendFile("index.html", { root: staticAssetsDir }, (err) => {
       if (err) next(err);
     });
   });
