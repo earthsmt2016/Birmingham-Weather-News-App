@@ -2,7 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startScheduler } from "./notifications";
 
-const rawPort = process.env["PORT"] ?? "5001";
+const rawPort = process.env["PORT"] ?? (process.env["NODE_ENV"] === "production" ? "3000" : "5001");
 const port = Number(rawPort);
 const host = process.env["HOST"] ?? (process.env["NODE_ENV"] === "production" ? "0.0.0.0" : "127.0.0.1");
 

@@ -1,3 +1,4 @@
+import path from "node:path";
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import session from "express-session";
@@ -52,6 +53,23 @@ app.use(
 );
 
 app.use("/api", router);
+
+const staticAssetsDir = process.env["STATIC_ASSETS_DIR"];
+
+if (staticAssetsDir) {
+  app.use(express.static(staticAssetsDir, { index: false }));
+
+  app.use((req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api") || path.extname(req.path)) {
+      next();
+      return;
+    }
+
+    res.sendFile(path.join(staticAssetsDir, "index.html"), (err) => {
+      if (err) next(err);
+    });
+  });
+}
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   const asRecord = typeof err === "object" && err !== null ? (err as Record<string, unknown>) : {};

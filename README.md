@@ -56,11 +56,12 @@ Frontend:
 
 Backend:
 
-- `PORT` - optional API port, defaults to `5001`.
-- `HOST` - optional bind address. Use `0.0.0.0` in AWS/container hosting.
+- `PORT` - optional API port, defaults to `5001` locally and `3000` in production.
+- `HOST` - optional bind address. Defaults to `127.0.0.1` locally and `0.0.0.0` in production.
+- `STATIC_ASSETS_DIR` - optional path to built frontend assets when the API serves the React app in Amplify Hosting compute.
 - `DATABASE_URL` - Postgres connection string for persistent storage.
 - `SESSION_SECRET` - session cookie secret.
-- `CORS_ORIGIN` - required in production when the frontend is served from another origin.
+- `CORS_ORIGIN` - required in production. Set it to the Amplify app URL.
 
 ## Quality Checks
 
@@ -73,7 +74,12 @@ corepack pnpm run lint
 
 ## AWS Amplify Hosting
 
-This repo includes `amplify.yml` for the Vite frontend in `apps/web`.
+This repo includes `amplify.yml` for a single Amplify Hosting deployment:
+
+- the Vite frontend is copied into `.amplify-hosting/static`
+- the Express API is copied into `.amplify-hosting/compute/default`
+- `/api/*` is routed to the Express API
+- normal page routes are served by the same Express app as the React SPA
 
 In the Amplify console, set the monorepo app root to:
 
@@ -87,20 +93,17 @@ For an existing Amplify app, also set this environment variable:
 AMPLIFY_MONOREPO_APP_ROOT=apps/web
 ```
 
-Amplify Hosting deploys the static frontend only. The log line `No backend environment association found` means Amplify did not deploy the Express app in `apps/api`.
+The log line `No backend environment association found` is still normal. It only means there is no separate Amplify Gen 1/Gen 2 backend environment. The Express API is deployed through Amplify Hosting compute as part of `.amplify-hosting`.
 
-Deploy `apps/api` separately on an AWS service that can run a Node HTTP server, such as App Runner, ECS/Fargate, Elastic Beanstalk, or a Lambda container. From the repository root, use:
+Amplify runs this build:
 
 ```bash
 npm install -g pnpm@11.8.0
 pnpm install --frozen-lockfile
-pnpm --filter @workspace/backend run build
-pnpm --filter @workspace/backend run start
+pnpm run amplify:build
 ```
 
-For AWS App Runner, this repo includes `apprunner.yaml` as a ready starting point.
-
-Before starting the deployed API for the first time, provision Postgres and push the database schema:
+Before deploying the API for the first time, provision Postgres and push the database schema:
 
 ```bash
 DATABASE_URL=postgres://... pnpm --filter @workspace/shared-db run push
@@ -110,7 +113,6 @@ Set these backend production environment variables:
 
 ```text
 NODE_ENV=production
-HOST=0.0.0.0
 DATABASE_URL=postgres://...
 SESSION_SECRET=<strong random value>
 CORS_ORIGIN=https://<your-amplify-domain>
@@ -118,8 +120,4 @@ ADMIN_USERNAME=<admin username>
 ADMIN_PASSWORD=<strong password>
 ```
 
-Then set this Amplify frontend environment variable and redeploy the frontend:
-
-```text
-VITE_API_BASE_URL=https://<your-backend-domain>
-```
+Leave `VITE_API_BASE_URL` blank in Amplify so browser requests stay same-origin at `/api/*`.
