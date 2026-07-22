@@ -20,6 +20,12 @@
     "skipLibCheck": true,
     "target": "es2022",
     "types": [],
-    "customConditions": ["workspace"]
+    "customConditions": ["workspace"],
+    "baseUrl": ".",
+    "paths": {
+      "@workspace/shared-api-zod": ["packages/shared-api-zod/src/index.ts"],
+      "@workspace/shared-api-client-react": ["packages/shared-api-client-react/src/index.ts"],
+      "@workspace/shared-db": ["packages/shared-db/src/index.ts"]
+    }
   }
 }

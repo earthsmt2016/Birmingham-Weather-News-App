@@ -10,6 +10,15 @@ out-tsc
 
 # dependencies
 node_modules
+.pnpm-store/
+
+# environment files
+.env
+.env.*
+!.env.example
+
+# generated platform metadata
+.replit-artifact/
 
 # IDEs and editors
 /.idea

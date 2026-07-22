@@ -1,45 +1,32 @@
-# [Project name]
+# Birmingham Weather News App
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+## Run And Operate
 
-## Run & Operate
-
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm run frontend:dev` - run the React frontend on port 5173.
+- `pnpm run backend:dev` - run the Express API in watch mode on port 5001.
+- `pnpm run typecheck` - typecheck shared packages and runnable apps.
+- `pnpm run build` - typecheck, then build frontend and backend.
+- `pnpm --filter @workspace/api-spec run codegen` - regenerate API client and Zod schemas from OpenAPI.
+- `pnpm --filter @workspace/shared-db run push` - push Drizzle schema changes in development.
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- pnpm workspace, Node.js 24, TypeScript 5.9.
+- Frontend: React, Vite, Tailwind CSS, TanStack Query.
+- Backend: Express, PostgreSQL, Drizzle ORM, Zod, RSS parsing, web push.
+- API contracts: OpenAPI plus generated Zod and React Query helpers.
 
-## Where things live
+## Where Things Live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
-
-## Architecture decisions
-
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
-
-## Product
-
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- `apps/web` - frontend.
+- `apps/api` - backend.
+- `packages/shared-db` - database schema and connection.
+- `packages/shared-api-zod` - API validation schemas, DTO contracts, and shared weather alert rules.
+- `packages/shared-api-client-react` - generated frontend API helpers.
+- `packages/api-spec` - OpenAPI spec and codegen config.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Run the backend before using frontend features that call `/api/*`.
+- `DATABASE_URL` is required for persistent saved articles and notification preferences.
+- Keep generated API files in sync by editing `packages/api-spec/openapi.yaml`, then running codegen.
