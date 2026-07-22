@@ -68,3 +68,21 @@ corepack pnpm run typecheck
 corepack pnpm run build
 corepack pnpm run lint
 ```
+
+## AWS Amplify Hosting
+
+This repo includes `amplify.yml` for the Vite frontend in `apps/web`.
+
+In the Amplify console, set the monorepo app root to:
+
+```text
+apps/web
+```
+
+For an existing Amplify app, also set this environment variable:
+
+```text
+AMPLIFY_MONOREPO_APP_ROOT=apps/web
+```
+
+Amplify Hosting deploys the static frontend only. Deploy `apps/api` separately, then point the frontend at that API URL.
