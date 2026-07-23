@@ -2,7 +2,51 @@
 
 Weather, news, alerts, saved articles, and notification preferences for Birmingham and the West Midlands.
 
-## Interview Version
+This is a location-aware weather and local-news dashboard for Birmingham, Solihull, Coventry, and nearby West Midlands towns. It combines Open-Meteo forecasts and air-quality data with regional RSS news feeds, saved articles, weather alerts, and notification preference controls.
+
+## Highlights
+
+- Live current conditions, feels-like temperature, humidity, wind, UV, cloud cover, and sunrise/sunset times.
+- Air-quality readings for European AQI, PM2.5, PM10, nitrogen dioxide, and ozone.
+- Three-hour cards, a custom hourly breakdown, and expandable 7-day forecasts.
+- Location search and map picking, with local weather and news updates for the selected area.
+- Regional news aggregation from BBC/local feeds with Google News fallback results.
+- Saved articles, notification preferences, and admin-protected push notification endpoints.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%">
+      <strong>Weather dashboard</strong><br />
+      Current conditions, air quality, 3-hour forecast cards, and custom hourly details.
+      <br /><br />
+      <img src="docs/screenshots/weather-dashboard.jpg" alt="Weather dashboard showing current conditions, air quality, and hourly forecast for Birmingham and Solihull" />
+    </td>
+    <td width="50%">
+      <strong>7-day forecast and rain radar</strong><br />
+      Expandable daily forecast rows with hourly drill-downs and an embedded rain radar map.
+      <br /><br />
+      <img src="docs/screenshots/seven-day-forecast-radar.jpg" alt="Seven-day forecast with hourly detail and rain radar map" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <strong>Birmingham local news</strong><br />
+      Location-aware latest news with source labels, timestamps, and share controls.
+      <br /><br />
+      <img src="docs/screenshots/local-news-birmingham.jpg" alt="Local news feed for Birmingham and the West Midlands" />
+    </td>
+    <td width="50%">
+      <strong>Location-specific news</strong><br />
+      Search-driven regional context switching, shown here with Coventry and Warwickshire results.
+      <br /><br />
+      <img src="docs/screenshots/location-news-coventry.jpg" alt="Local news feed after switching location to Coventry" />
+    </td>
+  </tr>
+</table>
+
+## Architecture
 
 This is a pnpm monorepo with two runnable apps:
 
