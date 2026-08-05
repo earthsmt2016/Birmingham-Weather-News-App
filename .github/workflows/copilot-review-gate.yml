@@ -1,0 +1,32 @@
+name: Copilot review gate
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  copilot-review-gate:
+    if: github.event.review.user.login == 'copilot-pull-request-reviewer[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Copilot findings
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.pulls.listCommentsForReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              review_id: context.payload.review.id,
+            });
+
+            if (comments.length > 0) {
+              core.setFailed(
+                `Copilot reported ${comments.length} inline review finding(s). Address them and request another review.`,
+              );
+            }
+
+            core.notice("Copilot completed its review without inline findings.");
