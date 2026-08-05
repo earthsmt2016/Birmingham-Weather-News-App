@@ -9,7 +9,15 @@ import {
   getWeatherDescription,
   formatTime,
 } from "@/lib/weather-utils";
-import { Droplets, Wind, Thermometer, Cloud, Clock } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Cloud,
+  Clock,
+  Droplets,
+  Thermometer,
+  Wind,
+} from "lucide-react";
 import { MUTED_LABEL } from "@/lib/styles";
 
 const STAT_CLASSES = {
@@ -33,8 +41,14 @@ const HOURLY_CLASSES = {
   tabsList: "grid w-full grid-cols-2",
   content: "mt-4",
   grid: "grid gap-2",
-  dayGroup: "space-y-2",
-  dayHeading: "text-xs font-medium text-muted-foreground pt-2 first:pt-0",
+  dayCard:
+    "w-full rounded-md bg-muted/30 p-3 text-left transition-colors hover:bg-muted/50",
+  dayCardHeader: "flex items-center gap-3",
+  dayCardDate: "text-sm font-medium",
+  dayCardIcon: "w-6 h-6 text-foreground",
+  dayCardSummary: "text-sm text-muted-foreground",
+  dayCardChevron: "ml-auto w-4 h-4 text-muted-foreground",
+  dayCardHours: "mt-3 space-y-2",
   entry: "flex items-center gap-4 p-3 rounded-md bg-muted/30 flex-wrap",
   time: "text-sm font-medium w-12 text-muted-foreground",
   entryIcon: "w-6 h-6 text-foreground",
@@ -144,7 +158,17 @@ function WeatherEntry({ entry }: { entry: WeatherCondition }) {
   );
 }
 
-function WeatherEntries({ entries }: { entries: WeatherCondition[] }) {
+interface WeatherEntriesProps {
+  entries: WeatherCondition[];
+  expandedDay: string | null;
+  onExpandedDayChange: (date: string | null) => void;
+}
+
+function WeatherEntries({
+  entries,
+  expandedDay,
+  onExpandedDayChange,
+}: WeatherEntriesProps) {
   const entriesByDay = entries.reduce<Map<string, WeatherCondition[]>>(
     (groupedEntries, entry) => {
       const date = getDateFromTime(entry.time);
@@ -159,11 +183,53 @@ function WeatherEntries({ entries }: { entries: WeatherCondition[] }) {
   return (
     <div className={HOURLY_CLASSES.grid}>
       {[...entriesByDay].map(([date, dayEntries]) => (
-        <section key={date} className={HOURLY_CLASSES.dayGroup}>
-          <h4 className={HOURLY_CLASSES.dayHeading}>{formatDateLabel(date)}</h4>
-          {dayEntries.map((entry) => (
-            <WeatherEntry key={entry.time} entry={entry} />
-          ))}
+        <section key={date}>
+          <button
+            type="button"
+            className={HOURLY_CLASSES.dayCard}
+            onClick={() =>
+              onExpandedDayChange(expandedDay === date ? null : date)
+            }
+            aria-expanded={expandedDay === date}
+            data-testid={`button-expand-weather-day-${date}`}
+          >
+            <div className={HOURLY_CLASSES.dayCardHeader}>
+              <WeatherIcon
+                iconName={getWeatherIcon(
+                  dayEntries[0].weatherCode,
+                  dayEntries[0].isDay,
+                )}
+                className={HOURLY_CLASSES.dayCardIcon}
+              />
+              <div>
+                <p className={HOURLY_CLASSES.dayCardDate}>
+                  {formatDateLabel(date)}
+                </p>
+                <p className={HOURLY_CLASSES.dayCardSummary}>
+                  {Math.round(
+                    Math.min(...dayEntries.map((entry) => entry.temperature)),
+                  )}
+                  ° -{" "}
+                  {Math.round(
+                    Math.max(...dayEntries.map((entry) => entry.temperature)),
+                  )}
+                  °C
+                </p>
+              </div>
+              {expandedDay === date ? (
+                <ChevronUp className={HOURLY_CLASSES.dayCardChevron} />
+              ) : (
+                <ChevronDown className={HOURLY_CLASSES.dayCardChevron} />
+              )}
+            </div>
+          </button>
+          {expandedDay === date && (
+            <div className={HOURLY_CLASSES.dayCardHours}>
+              {dayEntries.map((entry) => (
+                <WeatherEntry key={entry.time} entry={entry} />
+              ))}
+            </div>
+          )}
         </section>
       ))}
     </div>
@@ -180,6 +246,7 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
     Math.max(0, days.length - 1),
   ]);
   const [hourRange, setHourRange] = useState<number[] | null>(null);
+  const [expandedDay, setExpandedDay] = useState<string | null>(null);
 
   useEffect(() => {
     setDayRange(([start, end]) => [
@@ -187,6 +254,7 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
       Math.min(Math.max(start, end), Math.max(0, days.length - 1)),
     ]);
     setHourRange(null);
+    setExpandedDay(null);
   }, [days]);
 
   const selectedDayHours = hourly.filter((entry) => {
@@ -202,6 +270,12 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
   const handleDayRangeChange = (range: number[]) => {
     setDayRange(range);
     setHourRange(null);
+    setExpandedDay(null);
+  };
+
+  const handleHourRangeChange = (range: number[]) => {
+    setHourRange(range);
+    setExpandedDay(null);
   };
 
   if (hourly.length === 0) {
@@ -265,7 +339,11 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
           </div>
 
           <div className="mt-4">
-            <WeatherEntries entries={selectedHours} />
+            <WeatherEntries
+              entries={selectedHours}
+              expandedDay={expandedDay}
+              onExpandedDayChange={setExpandedDay}
+            />
           </div>
         </TabsContent>
 
@@ -291,7 +369,7 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
               max={Math.max(0, selectedDayHours.length - 1)}
               step={1}
               value={effectiveHourRange}
-              onValueChange={setHourRange}
+              onValueChange={handleHourRangeChange}
               data-testid="slider-hour-range"
               aria-label="Select hour range"
               disabled={selectedDayHours.length === 0}
@@ -314,7 +392,11 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
 
           <div className="mt-4">
             {selectedHours.length > 0 ? (
-              <WeatherEntries entries={selectedHours} />
+              <WeatherEntries
+                entries={selectedHours}
+                expandedDay={expandedDay}
+                onExpandedDayChange={setExpandedDay}
+              />
             ) : (
               <p className={HOURLY_CLASSES.empty}>
                 No weather is available for this range.
