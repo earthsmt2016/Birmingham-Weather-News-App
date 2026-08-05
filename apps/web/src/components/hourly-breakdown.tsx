@@ -209,7 +209,7 @@ function WeatherEntries({
                   {Math.round(
                     Math.min(...dayEntries.map((entry) => entry.temperature)),
                   )}
-                  ° -{" "}
+                  °C -{" "}
                   {Math.round(
                     Math.max(...dayEntries.map((entry) => entry.temperature)),
                   )}
@@ -257,10 +257,10 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
     setExpandedDay(null);
   }, [days]);
 
-  const selectedDateHours = hourly.filter((entry) => {
-    const dayIndex = days.indexOf(getDateFromTime(entry.time));
-    return dayIndex >= dayRange[0] && dayIndex <= dayRange[1];
-  });
+  const selectedDates = new Set(days.slice(dayRange[0], dayRange[1] + 1));
+  const selectedDateHours = hourly.filter((entry) =>
+    selectedDates.has(getDateFromTime(entry.time)),
+  );
   const effectiveHourRange = hourRange ?? [0, 23];
   const selectedHours = selectedDateHours.filter(
     (entry) =>
