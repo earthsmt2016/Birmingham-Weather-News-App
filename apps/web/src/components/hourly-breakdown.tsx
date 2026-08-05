@@ -33,6 +33,8 @@ const HOURLY_CLASSES = {
   tabsList: "grid w-full grid-cols-2",
   content: "mt-4",
   grid: "grid gap-2",
+  dayGroup: "space-y-2",
+  dayHeading: "text-xs font-medium text-muted-foreground pt-2 first:pt-0",
   entry: "flex items-center gap-4 p-3 rounded-md bg-muted/30 flex-wrap",
   time: "text-sm font-medium w-12 text-muted-foreground",
   entryIcon: "w-6 h-6 text-foreground",
@@ -142,6 +144,32 @@ function WeatherEntry({ entry }: { entry: WeatherCondition }) {
   );
 }
 
+function WeatherEntries({ entries }: { entries: WeatherCondition[] }) {
+  const entriesByDay = entries.reduce<Map<string, WeatherCondition[]>>(
+    (groupedEntries, entry) => {
+      const date = getDateFromTime(entry.time);
+      const dayEntries = groupedEntries.get(date) ?? [];
+      dayEntries.push(entry);
+      groupedEntries.set(date, dayEntries);
+      return groupedEntries;
+    },
+    new Map(),
+  );
+
+  return (
+    <div className={HOURLY_CLASSES.grid}>
+      {[...entriesByDay].map(([date, dayEntries]) => (
+        <section key={date} className={HOURLY_CLASSES.dayGroup}>
+          <h4 className={HOURLY_CLASSES.dayHeading}>{formatDateLabel(date)}</h4>
+          {dayEntries.map((entry) => (
+            <WeatherEntry key={entry.time} entry={entry} />
+          ))}
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
   const days = useMemo(
     () => [...new Set(hourly.map((entry) => getDateFromTime(entry.time)))],
@@ -236,10 +264,8 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
             </div>
           </div>
 
-          <div className={`${HOURLY_CLASSES.grid} mt-4`}>
-            {selectedHours.map((entry) => (
-              <WeatherEntry key={entry.time} entry={entry} />
-            ))}
+          <div className="mt-4">
+            <WeatherEntries entries={selectedHours} />
           </div>
         </TabsContent>
 
@@ -286,11 +312,9 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
             </div>
           </div>
 
-          <div className={`${HOURLY_CLASSES.grid} mt-4`}>
+          <div className="mt-4">
             {selectedHours.length > 0 ? (
-              selectedHours.map((entry) => (
-                <WeatherEntry key={entry.time} entry={entry} />
-              ))
+              <WeatherEntries entries={selectedHours} />
             ) : (
               <p className={HOURLY_CLASSES.empty}>
                 No weather is available for this range.
