@@ -191,6 +191,7 @@ function WeatherEntries({
               onExpandedDayChange(expandedDay === date ? null : date)
             }
             aria-expanded={expandedDay === date}
+            aria-controls={`weather-day-hours-${date}`}
             data-testid={`button-expand-weather-day-${date}`}
           >
             <div className={HOURLY_CLASSES.dayCardHeader}>
@@ -223,13 +224,15 @@ function WeatherEntries({
               )}
             </div>
           </button>
-          {expandedDay === date && (
-            <div className={HOURLY_CLASSES.dayCardHours}>
-              {dayEntries.map((entry) => (
-                <WeatherEntry key={entry.time} entry={entry} />
-              ))}
-            </div>
-          )}
+          <div
+            id={`weather-day-hours-${date}`}
+            className={HOURLY_CLASSES.dayCardHours}
+            hidden={expandedDay !== date}
+          >
+            {dayEntries.map((entry) => (
+              <WeatherEntry key={entry.time} entry={entry} />
+            ))}
+          </div>
         </section>
       ))}
     </div>
@@ -262,11 +265,10 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
     selectedDates.has(getDateFromTime(entry.time)),
   );
   const effectiveHourRange = hourRange ?? [0, 23];
-  const selectedHours = selectedDateHours.filter(
-    (entry) =>
-      getHourFromTime(entry.time) >= effectiveHourRange[0] &&
-      getHourFromTime(entry.time) <= effectiveHourRange[1],
-  );
+  const selectedHours = selectedDateHours.filter((entry) => {
+    const hour = getHourFromTime(entry.time);
+    return hour >= effectiveHourRange[0] && hour <= effectiveHourRange[1];
+  });
 
   const handleDayRangeChange = (range: number[]) => {
     setDayRange(range);
@@ -340,11 +342,17 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
           </div>
 
           <div className="mt-4">
-            <WeatherEntries
-              entries={selectedHours}
-              expandedDay={expandedDay}
-              onExpandedDayChange={setExpandedDay}
-            />
+            {selectedHours.length > 0 ? (
+              <WeatherEntries
+                entries={selectedHours}
+                expandedDay={expandedDay}
+                onExpandedDayChange={setExpandedDay}
+              />
+            ) : (
+              <p className={HOURLY_CLASSES.empty}>
+                No weather is available for this range.
+              </p>
+            )}
           </div>
         </TabsContent>
 
