@@ -18,6 +18,7 @@ import {
   Thermometer,
   Wind,
 } from "lucide-react";
+import { DATE_MIDDAY_SUFFIX } from "@/lib/constants";
 import { MUTED_LABEL } from "@/lib/styles";
 
 const STAT_CLASSES = {
@@ -63,14 +64,11 @@ interface HourlyBreakdownProps {
 }
 
 function getDateFromTime(time: string): string {
-  const date = new Date(time);
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const day = date.getDate().toString().padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
+  return time.slice(0, 10);
 }
 
 function formatDateLabel(date: string): string {
-  return new Date(`${date}T12:00:00`).toLocaleDateString("en-GB", {
+  return new Date(`${date}${DATE_MIDDAY_SUFFIX}`).toLocaleDateString("en-GB", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -84,7 +82,7 @@ function formatDateRange(days: string[], [start, end]: number[]): string {
 }
 
 function getHourFromTime(time: string): number {
-  return new Date(time).getHours();
+  return Number.parseInt(time.slice(11, 13), 10);
 }
 
 function formatHour(hour: number): string {

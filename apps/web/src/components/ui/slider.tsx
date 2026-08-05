@@ -8,7 +8,14 @@ const Slider = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
 >(
   (
-    { className, value, defaultValue, "aria-label": ariaLabel, ...props },
+    {
+      className,
+      value,
+      defaultValue,
+      "aria-label": ariaLabel,
+      "aria-labelledby": ariaLabelledBy,
+      ...props
+    },
     ref,
   ) => {
     const values = value ?? defaultValue;
@@ -24,7 +31,8 @@ const Slider = React.forwardRef<
         )}
         value={value}
         defaultValue={defaultValue}
-        aria-label={ariaLabel}
+        aria-label={ariaLabelledBy ? undefined : sliderLabel}
+        aria-labelledby={ariaLabelledBy}
         {...props}
       >
         <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
