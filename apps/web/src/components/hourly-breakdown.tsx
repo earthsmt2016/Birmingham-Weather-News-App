@@ -68,7 +68,16 @@ function getDateFromTime(time: string): string {
 }
 
 function formatDateLabel(date: string): string {
-  return new Date(`${date}${DATE_MIDDAY_SUFFIX}`).toLocaleDateString("en-GB", {
+  if (!date) {
+    return "";
+  }
+
+  const parsedDate = new Date(`${date}${DATE_MIDDAY_SUFFIX}`);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "";
+  }
+
+  return parsedDate.toLocaleDateString("en-GB", {
     weekday: "short",
     day: "numeric",
     month: "short",

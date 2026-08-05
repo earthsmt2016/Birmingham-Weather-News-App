@@ -43,12 +43,15 @@ const Slider = React.forwardRef<
             key={index}
             className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
             aria-label={
-              thumbCount === 1
-                ? sliderLabel
-                : thumbCount === 2
-                  ? `${sliderLabel} ${index === 0 ? "start" : "end"}`
-                  : `${sliderLabel} ${index + 1} of ${thumbCount}`
+              ariaLabelledBy
+                ? undefined
+                : thumbCount === 1
+                  ? sliderLabel
+                  : thumbCount === 2
+                    ? `${sliderLabel} ${index === 0 ? "start" : "end"}`
+                    : `${sliderLabel} ${index + 1} of ${thumbCount}`
             }
+            aria-labelledby={ariaLabelledBy}
           />
         ))}
       </SliderPrimitive.Root>
