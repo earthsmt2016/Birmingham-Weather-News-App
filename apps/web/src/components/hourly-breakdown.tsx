@@ -63,7 +63,10 @@ interface HourlyBreakdownProps {
 }
 
 function getDateFromTime(time: string): string {
-  return time.slice(0, 10);
+  const date = new Date(time);
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function formatDateLabel(date: string): string {
@@ -281,6 +284,13 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
     setExpandedDay(null);
   };
 
+  const handleViewChange = (view: string) => {
+    if (view === "day") {
+      setHourRange(null);
+      setExpandedDay(null);
+    }
+  };
+
   if (hourly.length === 0) {
     return null;
   }
@@ -297,7 +307,11 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
         </div>
       </div>
 
-      <Tabs defaultValue="day" className={HOURLY_CLASSES.tabs}>
+      <Tabs
+        defaultValue="day"
+        className={HOURLY_CLASSES.tabs}
+        onValueChange={handleViewChange}
+      >
         <TabsList className={HOURLY_CLASSES.tabsList}>
           <TabsTrigger value="day" data-testid="tab-day-breakdown">
             Date range
