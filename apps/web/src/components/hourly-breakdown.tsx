@@ -80,12 +80,12 @@ function formatDateRange(days: string[], [start, end]: number[]): string {
   return start === end ? startLabel : `${startLabel} - ${endLabel}`;
 }
 
-function getDefaultHourRange(hours: WeatherCondition[]): number[] {
-  const now = new Date();
-  const currentHourIndex = hours.findIndex(
-    (entry) => new Date(entry.time) >= now,
-  );
-  return [Math.max(0, currentHourIndex), Math.max(0, hours.length - 1)];
+function getHourFromTime(time: string): number {
+  return new Date(time).getHours();
+}
+
+function formatHour(hour: number): string {
+  return `${hour.toString().padStart(2, "0")}:00`;
 }
 
 function WeatherEntry({ entry }: { entry: WeatherCondition }) {
@@ -257,14 +257,15 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
     setExpandedDay(null);
   }, [days]);
 
-  const selectedDayHours = hourly.filter((entry) => {
+  const selectedDateHours = hourly.filter((entry) => {
     const dayIndex = days.indexOf(getDateFromTime(entry.time));
     return dayIndex >= dayRange[0] && dayIndex <= dayRange[1];
   });
-  const effectiveHourRange = hourRange ?? getDefaultHourRange(selectedDayHours);
-  const selectedHours = selectedDayHours.slice(
-    effectiveHourRange[0],
-    effectiveHourRange[1] + 1,
+  const effectiveHourRange = hourRange ?? [0, 23];
+  const selectedHours = selectedDateHours.filter(
+    (entry) =>
+      getHourFromTime(entry.time) >= effectiveHourRange[0] &&
+      getHourFromTime(entry.time) <= effectiveHourRange[1],
   );
 
   const handleDayRangeChange = (range: number[]) => {
@@ -359,34 +360,22 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
                 className={HOURLY_CLASSES.controlValue}
                 data-testid="text-selected-hour-range"
               >
-                {selectedDayHours.length > 0
-                  ? `${formatTime(selectedDayHours[effectiveHourRange[0]].time)} - ${formatTime(selectedDayHours[effectiveHourRange[1]].time)}`
-                  : "No hours available"}
+                {formatHour(effectiveHourRange[0])} -{" "}
+                {formatHour(effectiveHourRange[1])}
               </span>
             </div>
             <Slider
               min={0}
-              max={Math.max(0, selectedDayHours.length - 1)}
+              max={23}
               step={1}
               value={effectiveHourRange}
               onValueChange={handleHourRangeChange}
               data-testid="slider-hour-range"
               aria-label="Select hour range"
-              disabled={selectedDayHours.length === 0}
             />
             <div className={HOURLY_CLASSES.sliderEnds}>
-              <span className={HOURLY_CLASSES.sliderText}>
-                {selectedDayHours[0]
-                  ? formatTime(selectedDayHours[0].time)
-                  : ""}
-              </span>
-              <span className={HOURLY_CLASSES.sliderText}>
-                {selectedDayHours.length > 0
-                  ? formatTime(
-                      selectedDayHours[selectedDayHours.length - 1].time,
-                    )
-                  : ""}
-              </span>
+              <span className={HOURLY_CLASSES.sliderText}>00:00</span>
+              <span className={HOURLY_CLASSES.sliderText}>23:00</span>
             </div>
           </div>
 
