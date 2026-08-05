@@ -23,7 +23,6 @@ const HOURLY_CLASSES = {
   heading: "text-sm font-medium text-muted-foreground",
   badgeRow: "flex items-center gap-2",
   clockIcon: "w-3.5 h-3.5 text-muted-foreground",
-  controls: "space-y-4",
   control: "px-1",
   controlHeader: "flex items-center justify-between gap-2 mb-2",
   controlLabel: "text-xs font-medium",
@@ -59,11 +58,18 @@ function formatDateLabel(date: string): string {
   });
 }
 
-function getInitialHourIndex(hours: WeatherCondition[]): number {
+function formatDateRange(days: string[], [start, end]: number[]): string {
+  const startLabel = formatDateLabel(days[start] ?? "");
+  const endLabel = formatDateLabel(days[end] ?? "");
+  return start === end ? startLabel : `${startLabel} - ${endLabel}`;
+}
+
+function getDefaultHourRange(hours: WeatherCondition[]): number[] {
+  const now = new Date();
   const currentHourIndex = hours.findIndex(
-    (entry) => new Date(entry.time) >= new Date(),
+    (entry) => new Date(entry.time) >= now,
   );
-  return Math.max(0, currentHourIndex);
+  return [Math.max(0, currentHourIndex), Math.max(0, hours.length - 1)];
 }
 
 function WeatherEntry({ entry }: { entry: WeatherCondition }) {
@@ -141,42 +147,33 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
     () => [...new Set(hourly.map((entry) => getDateFromTime(entry.time)))],
     [hourly],
   );
-  const [selectedDay, setSelectedDay] = useState(() => days[0] ?? "");
-  const [selectedHourIndex, setSelectedHourIndex] = useState<number | null>(
-    null,
-  );
+  const [dayRange, setDayRange] = useState(() => [
+    0,
+    Math.max(0, days.length - 1),
+  ]);
+  const [hourRange, setHourRange] = useState<number[] | null>(null);
 
   useEffect(() => {
-    if (!days.includes(selectedDay)) {
-      setSelectedDay(days[0] ?? "");
-      setSelectedHourIndex(null);
-    }
-  }, [days, selectedDay]);
+    setDayRange(([start, end]) => [
+      Math.min(start, Math.max(0, days.length - 1)),
+      Math.min(Math.max(start, end), Math.max(0, days.length - 1)),
+    ]);
+    setHourRange(null);
+  }, [days]);
 
-  const selectedDayIndex = Math.max(0, days.indexOf(selectedDay));
-  const selectedDayHours = hourly.filter(
-    (entry) => getDateFromTime(entry.time) === selectedDay,
+  const selectedDayHours = hourly.filter((entry) => {
+    const dayIndex = days.indexOf(getDateFromTime(entry.time));
+    return dayIndex >= dayRange[0] && dayIndex <= dayRange[1];
+  });
+  const effectiveHourRange = hourRange ?? getDefaultHourRange(selectedDayHours);
+  const selectedHours = selectedDayHours.slice(
+    effectiveHourRange[0],
+    effectiveHourRange[1] + 1,
   );
-  const selectedHour =
-    selectedHourIndex === null
-      ? null
-      : (selectedDayHours[selectedHourIndex] ?? null);
 
-  const handleDayChange = ([dayIndex]: number[]) => {
-    setSelectedDay(days[dayIndex] ?? "");
-    setSelectedHourIndex(null);
-  };
-
-  const handleHourChange = ([hourIndex]: number[]) => {
-    setSelectedHourIndex(hourIndex);
-  };
-
-  const handleViewChange = (view: string) => {
-    if (view === "day") {
-      setSelectedHourIndex(null);
-    } else if (selectedHourIndex === null && selectedDayHours.length > 0) {
-      setSelectedHourIndex(getInitialHourIndex(selectedDayHours));
-    }
+  const handleDayRangeChange = (range: number[]) => {
+    setDayRange(range);
+    setHourRange(null);
   };
 
   if (hourly.length === 0) {
@@ -189,52 +186,19 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
         <h3 className={HOURLY_CLASSES.heading}>Custom Weather Breakdown</h3>
         <div className={HOURLY_CLASSES.badgeRow}>
           <Clock className={HOURLY_CLASSES.clockIcon} />
-          <span className={STAT_CLASSES.label}>Choose a day and hour</span>
+          <span className={STAT_CLASSES.label}>
+            Choose a date or hour range
+          </span>
         </div>
       </div>
 
-      <div className={HOURLY_CLASSES.controls}>
-        <div className={HOURLY_CLASSES.control}>
-          <div className={HOURLY_CLASSES.controlHeader}>
-            <span className={HOURLY_CLASSES.controlLabel}>Day</span>
-            <span
-              className={HOURLY_CLASSES.controlValue}
-              data-testid="text-selected-day"
-            >
-              {formatDateLabel(selectedDay)}
-            </span>
-          </div>
-          <Slider
-            min={0}
-            max={Math.max(0, days.length - 1)}
-            step={1}
-            value={[selectedDayIndex]}
-            onValueChange={handleDayChange}
-            data-testid="slider-day"
-            aria-label="Select day"
-          />
-          <div className={HOURLY_CLASSES.sliderEnds}>
-            <span className={HOURLY_CLASSES.sliderText}>
-              {formatDateLabel(days[0] ?? "")}
-            </span>
-            <span className={HOURLY_CLASSES.sliderText}>
-              {formatDateLabel(days[days.length - 1] ?? "")}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <Tabs
-        defaultValue="day"
-        className={HOURLY_CLASSES.tabs}
-        onValueChange={handleViewChange}
-      >
+      <Tabs defaultValue="day" className={HOURLY_CLASSES.tabs}>
         <TabsList className={HOURLY_CLASSES.tabsList}>
           <TabsTrigger value="day" data-testid="tab-day-breakdown">
-            Day
+            Date range
           </TabsTrigger>
           <TabsTrigger value="hour" data-testid="tab-hour-breakdown">
-            Hour
+            Hour range
           </TabsTrigger>
         </TabsList>
 
@@ -243,8 +207,37 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
           className={HOURLY_CLASSES.content}
           data-testid="panel-day-breakdown"
         >
-          <div className={HOURLY_CLASSES.grid}>
-            {selectedDayHours.map((entry) => (
+          <div className={HOURLY_CLASSES.control}>
+            <div className={HOURLY_CLASSES.controlHeader}>
+              <span className={HOURLY_CLASSES.controlLabel}>Dates</span>
+              <span
+                className={HOURLY_CLASSES.controlValue}
+                data-testid="text-selected-day-range"
+              >
+                {formatDateRange(days, dayRange)}
+              </span>
+            </div>
+            <Slider
+              min={0}
+              max={Math.max(0, days.length - 1)}
+              step={1}
+              value={dayRange}
+              onValueChange={handleDayRangeChange}
+              data-testid="slider-day-range"
+              aria-label="Select date range"
+            />
+            <div className={HOURLY_CLASSES.sliderEnds}>
+              <span className={HOURLY_CLASSES.sliderText}>
+                {formatDateLabel(days[0] ?? "")}
+              </span>
+              <span className={HOURLY_CLASSES.sliderText}>
+                {formatDateLabel(days[days.length - 1] ?? "")}
+              </span>
+            </div>
+          </div>
+
+          <div className={`${HOURLY_CLASSES.grid} mt-4`}>
+            {selectedHours.map((entry) => (
               <WeatherEntry key={entry.time} entry={entry} />
             ))}
           </div>
@@ -257,24 +250,24 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
         >
           <div className={HOURLY_CLASSES.control}>
             <div className={HOURLY_CLASSES.controlHeader}>
-              <span className={HOURLY_CLASSES.controlLabel}>Hour</span>
+              <span className={HOURLY_CLASSES.controlLabel}>Hours</span>
               <span
                 className={HOURLY_CLASSES.controlValue}
-                data-testid="text-selected-hour"
+                data-testid="text-selected-hour-range"
               >
-                {selectedHour
-                  ? formatTime(selectedHour.time)
-                  : "Choose an hour"}
+                {selectedDayHours.length > 0
+                  ? `${formatTime(selectedDayHours[effectiveHourRange[0]].time)} - ${formatTime(selectedDayHours[effectiveHourRange[1]].time)}`
+                  : "No hours available"}
               </span>
             </div>
             <Slider
               min={0}
               max={Math.max(0, selectedDayHours.length - 1)}
               step={1}
-              value={[selectedHourIndex ?? 0]}
-              onValueChange={handleHourChange}
-              data-testid="slider-hour"
-              aria-label="Select hour"
+              value={effectiveHourRange}
+              onValueChange={setHourRange}
+              data-testid="slider-hour-range"
+              aria-label="Select hour range"
               disabled={selectedDayHours.length === 0}
             />
             <div className={HOURLY_CLASSES.sliderEnds}>
@@ -294,11 +287,13 @@ export function HourlyBreakdown({ hourly }: HourlyBreakdownProps) {
           </div>
 
           <div className={`${HOURLY_CLASSES.grid} mt-4`}>
-            {selectedHour ? (
-              <WeatherEntry entry={selectedHour} />
+            {selectedHours.length > 0 ? (
+              selectedHours.map((entry) => (
+                <WeatherEntry key={entry.time} entry={entry} />
+              ))
             ) : (
               <p className={HOURLY_CLASSES.empty}>
-                Choose an hour to view its weather.
+                No weather is available for this range.
               </p>
             )}
           </div>
